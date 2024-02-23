@@ -1,6 +1,6 @@
 ---
 title: "EJERCICIOS - CAPITULO 2"
-author: "OSCAR EDUARDO RAMIREZ MENDEZ"
+author: "OSCAR"
 date: "TEORIA DE DECISIONES - 8VO SEMESTRE"
 output: 
   html_document:
