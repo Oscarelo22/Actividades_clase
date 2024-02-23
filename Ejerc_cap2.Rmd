@@ -60,7 +60,7 @@ car_alluvia <- Car |>
 ```{r}
 car_alluvia |> 
   ggplot(aes(y = frequency, axis1 = college, axis2 = type1, axis3 = type2, axis4=choice)) +
-  geom_alluvium(aes(fill = college), width = 1/12, color = "orange") +
+  geom_alluvium(aes(fill = college), width = 1/12, color = "black") +
   geom_stratum(width = 1/4, fill = "black", color = "grey") +
   geom_text(stat = "stratum", aes(label = after_stat(stratum)), color = "white", size = 3) +
   scale_x_discrete(limits = c("College", "Type 1","Type 2", "Choice"), expand = c(.05, .05)) +
