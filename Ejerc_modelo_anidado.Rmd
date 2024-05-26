@@ -1,0 +1,121 @@
+---
+title: "ESTIMACION DEL MODELO LOGIT ANIDADO"
+author: "OSCAR EDUARDO RAMIREZ MENDEZ"
+date: "TEORIA DE DECISIONES - 8VO SEMESTRE"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 1
+    theme: journal
+---
+
+
+<style>
+body {
+text-align: justify}
+</style>
+
+<style type="text/css">
+body{/*Normal*/
+     font-size: 20px;
+}
+</style>
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(tidyverse)
+library(discrtr) # A companion package for the book Introduction to Discrete Choice Analysis with `R`
+library(dplyr) # A Grammar of Data Manipulation
+library(ggplot2) # Create Elegant Data Visualisations Using the Grammar of Graphics
+library(mlogit) # Multinomial Logit Models
+library(readr) # Read Rectangular Text Data
+library(gplots) # Various R Programming Tools for Plotting Data
+library(ggmosaic) # Mosaic Plots in the 'ggplot2' Framework
+library(treemapify)
+library(ggridges)
+library(ggalluvial)
+library(evd)
+library(htmlwidgets) # HTML Widgets for R
+library(kableExtra) # Construct Complex Table with kable and Pipe Syntax
+library(plotly) # Create interactive web graphics
+library(tidyr) # Tidy messy data
+library(webshot2) # Take screenshots of web pages
+# Para poder estimar el modelo de clases latentes, es necesario instalar la versión de desarrollo, 
+# pero antes hay que instalr el package remotes
+#install.packages("remotes")
+#remotes::install_github("mauricio1986/gmnl")
+library(gmnl) # Multinomial Logit Models with Random Parameters
+library(evd)
+library(gridExtra)
+```
+
+
+Tomamos el dataset, el cual está en formato "Heating" por amplitud (cada fila corresponde a un decisor), y lo convertimos a formato por longitud, donde se genera una fila para cada alternativa que sea evaluada por un decisor.
+
+
+```{r}
+data("Heating", package = "mlogit")
+H <- mlogit.data(Heating, shape = "wide", choice = "depvar", varying = c(3:12))
+
+```
+
+Se procede a estimar el modelo logit multinomial para facilitar comparaciones futuras. En este modelo, se consideran como atributos de las alternativas tanto el costo de instalación como el de operación.
+
+```{r}
+model3 <- mlogit(depvar ~ ic + oc, Heating, shape = "wide", choice = "depvar", reflevel = "ec", varying = c(3:12))
+summary(model3)
+```
+
+
+Vamos a definir el modelo logit anidado utilizando la función mlogit() con argumentos adicionales para especificar los nidos. La fórmula contendrá los costos de instalación (ic) y los costos de operación (oc) como variables específicas de cada alternativa con coeficiente genérico.
+
+Los nidos estarán definidos mediante una lista. En este caso, tendremos dos nidos: uno para sistemas del tipo "room" (er y gr) y otro para sistemas del tipo "central" (ec, gc y hp). Este modelo será nombrado como nl1 (nested logit 1).
+
+```{r}
+nl1 <- mlogit(depvar ~ oc + ic, H, nests = list(room=c('er', 'gr'), central = c('ec', 'gc', 'hp')), steptol=1e-12)
+
+summary(nl1)
+```
+
+Los coeficientes de los valores inclusivos para cada nido $\lambda_{room}$ (iv:room) y $\lambda_{central}$ (iv:central) son significativos. Estos coeficientes son interpretados como correlaciones para los nidos de la siguiente manera:
+
+$1-\lambda_{room}$
+
+```{r}
+1-nl1$coefficients["iv:room"]
+```
+
+
+
+$1-\lambda_{central}$
+
+```{r}
+1-nl1$coefficients["iv:central"]
+```
+
+
+
+Vamos a comparar el modelo anidado (nl1) con el modelo logit multinomial (model3) mediante el test de razón de verosimilitud:
+
+```{r}
+lrtest(model3, nl1)
+```
+
+Para forzar que los parámetros de los nidos sean idénticos en el modelo nl1, puedes agregar un argumento adicional a la función mlogit(). Esto asegurará que los parámetros de los nidos sean los mismos.
+
+```{r}
+nl2 <- mlogit(depvar ~ ic + oc, H, nests = list(room = c( 'er', 'gr'), central = c('ec', 'gc', 'hp')),
+              un.nest.el = TRUE, steptol = 1e-12)
+
+summary(nl2)
+```
+
+Vamos a comparar los dos modelos anidados para evaluar cuál ofrece un mejor ajuste a los datos.
+
+```{r}
+lrtest(nl1, nl2)
+```
+
